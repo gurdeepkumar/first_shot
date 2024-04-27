@@ -1,78 +1,93 @@
 import random
 from itertools import islice
+from player import RandomComputerPlayer, HumanPlayer
 
-def print_board(board):
-  for i in range(9):
-    updated_board = [val if val != " " else str(index) for index,val in enumerate(board)]
-  for i in range(3):
-    row = [spot for spot in updated_board[i*3:i*3+3]]
-    print("|".join(row))
+class TicTacToe:
+  #initializing the variables
+  def __init__(self):
+    self.board = [" " for i in range(9)]
+    self.current_winner = None
+    self.updatedboard = []
 
-def empty_cells(board):
-  return board.count(" ")
+  def print_board_structure(self):
+    self.updated_board = [str(index) for index,val in enumerate(self.board)]
+    for i in range(3):
+      row = [spot for spot in self.updated_board[i*3:i*3+3]]
+      print("|".join(row))
 
-def avaiable_spots(board):
-  return [i for i, j in enumerate(board) if j == " "]
+  def print_board(self):
+    self.updated_board = [val for index,val in enumerate(self.board)]
+    for i in range(3):
+      row = [spot for spot in self.updated_board[i*3:i*3+3]]
+      print("|".join(row))
 
-def check_winner(board):
-  for i in range(3):
-    if (all(spot == "X" for spot in board[i*3:i*3+3])):
-      return "X wins"
-    elif (all(spot == "O" for spot in board[i*3:i*3+3])):
-      return "O wins"
-    elif (all(spot == "X" for spot in islice(board,i,9,3))):
-      return "X wins"
-    elif (all(spot == "O" for spot in islice(board,i,9,3))):
-      return "O wins"
-    
-  if (all(spot == "X" for spot in islice(board,0,9,4))) or (all(spot == "X" for spot in islice(board,2,8,2))):
-    return "X wins"
-  elif (all(spot == "O" for spot in islice(board,0,9,4))) or (all(spot == "O" for spot in islice(board,2,8,2))):
-    return "O wins"
+  def empty_cells(self):
+    return self.board.count(" ")
 
-def game_tictactoe():
-  board = [" " for i in range(9)]
-
-  user_sign = input("What sign you want ? X or O :").upper()
-  if user_sign == "X":
-    computer_sign = "O"
-  else:
-    computer_sign = "X"
-
-  while empty_cells(board) != 0: 
-    print_board(board)
-    avaiable_moves = avaiable_spots(board)    
-    
-    user_move = int(input("Input your move: (0-8): "))
-    while user_move not in avaiable_moves:
-      user_move = int(input("Move not avaialable. Try again: (0-8): "))
-    board[user_move] = user_sign
-
-    if check_winner(board) == "X wins":
-      print(f"***** X Wins *****")
-      print_board(board)
-      break
-    elif check_winner(board) == "O wins":
-      print(f"***** O Wins *****")
-      print_board(board)
-      break
-
-    if empty_cells(board) != 0:
-      print_board(board)
-      avaiable_moves = avaiable_spots(board)
-      computer_move = int(random.choice(avaiable_moves))
-      print(f"Computer's move is: {computer_move}")
-      board[computer_move]=computer_sign
-      if check_winner(board) == "X wins":
-        print(f"***** X Wins *****")
-        print_board(board)
-        break
-      elif check_winner(board) == "O wins":
-        print(f"***** O Wins *****")
-        print_board(board)
-        break
+  def available_moves(self):
+    return [i for i, spot in enumerate(self.board) if spot  == " "]
   
-  #empty_cells loop finsihes here:
-  print("The end.")
+  def make_move(self, move, letter):
+    if self.board[move] == " ":
+      self.board[move] = letter
+      if self.check_winner(move, letter):
+        self.current_winner = letter
+      return True
+    return False
+    
+  def check_winner(self, move, letter):
 
-game_tictactoe()
+    row_index = move // 3
+    row = self.board[row_index*3:row_index*3+3]
+    if (all(spot == letter for spot in row)):
+      return True
+    
+    col_index = move % 3
+    col = list(islice(self.board,col_index,9,3))
+    if all(spot == letter for spot in col):
+      return True
+    
+    if move % 2 == 0:
+      diagnol1 = [self.board[i] for i in [0, 4, 8]]
+      if all(spot == letter for spot in diagnol1):
+        return True
+      diagnol2 = [self.board[i] for i in [2, 4, 6]]
+      if all(spot == letter for spot in diagnol2):
+        return True
+      
+    return False
+
+
+def play(game, x_player, o_player, print_game = True):
+  if print_game:
+    game.print_board_structure()
+  letter = "X" # starting letter 
+  while game.empty_cells() != 0:
+    if letter == "O":
+      move = o_player.get_move(game)
+    else:
+      move = x_player.get_move(game)
+    
+    if game.make_move(move, letter):
+      if print_game:
+        print(f"{letter} makes a move to spot {move}")
+        game.print_board()
+        print(" ")
+      
+      if game.current_winner:
+        if print_game:
+          print(f"{letter} wins!")
+        return letter
+      
+      if letter == "O":
+        letter = "X"
+      else:
+        letter = "O"
+  if print_game:
+    print("It's a tie.")
+
+if __name__ == "__main__":
+  x_player = HumanPlayer("X")
+  o_player = RandomComputerPlayer("O")
+  t = TicTacToe()
+  play(t, x_player, o_player, print_game=True)
